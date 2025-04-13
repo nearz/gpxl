@@ -39,7 +39,6 @@ func Read(path string) (*Pxl, error) {
 	return pxl, nil
 }
 
-// Will creating a new image to save be costly?
 func (p *Pxl) Write(path string, format ImageFormat) error {
 	f, err := os.Create(path)
 	if err != nil {
@@ -55,6 +54,10 @@ func (p *Pxl) Write(path string, format ImageFormat) error {
 	default:
 		return fmt.Errorf("unsupported format: %s", format)
 	}
+}
+
+func (p *Pxl) PrintType() {
+	fmt.Printf("Type: %T", p.Image)
 }
 
 // Should just be New RGBA. Not format specific, format with happen on Write.

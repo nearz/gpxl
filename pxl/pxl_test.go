@@ -62,6 +62,14 @@ func TestWrite(t *testing.T) {
 	}
 }
 
+func TestPrintType(t *testing.T) {
+	pxl, err := Read("../test_images/elephant.jpeg")
+	if err != nil {
+		t.Fatalf("Failed to read image: %v", err)
+	}
+	pxl.PrintType()
+}
+
 func TestSandbox(t *testing.T) {
 	pxl, err := Read("../test_images/elephant.png")
 	if err != nil {

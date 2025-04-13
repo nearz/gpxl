@@ -6,4 +6,6 @@ import (
 
 type Filter interface {
 	Render(*pxl.Pxl)
+	RenderRows(*pxl.Pxl)
+	RenderSequential(*pxl.Pxl)
 }

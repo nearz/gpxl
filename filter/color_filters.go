@@ -74,31 +74,100 @@ func (c *colorFilter) Render(p *pxl.Pxl) {
 	p.Image = dst
 }
 
-// func (c *colorFilter) RenderRows(p *pxl.Pxl) {
-// 	bds := p.Image.Bounds()
-// 	dst := c.dst(bds)
-// 	var wg sync.WaitGroup
-// 	for y := bds.Min.Y; y < bds.Max.Y; y++ {
-// 		wg.Add(1)
-// 		go func() {
-// 			defer wg.Done()
-// 			procPixRow(p.Image, dst, c.fn, bds.Min.X, bds.Max.X, y)
-// 		}()
-// 	}
-// 	wg.Wait()
-// 	p.Image = dst
-// }
-//
-// func (c *colorFilter) RenderSequential(p *pxl.Pxl) {
-// 	bds := p.Image.Bounds()
-// 	dst := c.dst(bds)
-// 	for y := bds.Min.Y; y < bds.Max.Y; y++ {
-// 		for x := bds.Min.X; x < bds.Max.X; x++ {
-// 			c.fn(p.Image, dst, x, y)
-// 		}
-// 	}
-// 	p.Image = dst
-// }
+func (c *colorFilter) RenderRows(p *pxl.Pxl) {
+	bds := p.Image.Bounds()
+	dst := c.dst(bds)
+	var wg sync.WaitGroup
+	for y := bds.Min.Y; y < bds.Max.Y; y++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			procPixRow(p.Image, dst, c.fn, bds.Min.X, bds.Max.X, y)
+		}()
+	}
+	wg.Wait()
+	p.Image = dst
+}
+
+func (c *colorFilter) RenderBlock(p *pxl.Pxl) {
+	bds := p.Image.Bounds()
+	dst := c.dst(bds)
+
+	// Block size for processing pixels
+	// A size of 32 or 64 is typically good for cache locality
+	const blockSize = 32
+
+	// Calculate the number of blocks in each dimension
+	width := bds.Max.X - bds.Min.X
+	height := bds.Max.Y - bds.Min.Y
+	numBlocksX := (width + blockSize - 1) / blockSize
+	numBlocksY := (height + blockSize - 1) / blockSize
+	totalBlocks := numBlocksX * numBlocksY
+
+	// Get the number of available CPUs
+	ncpus := runtime.NumCPU()
+
+	// Create a channel for work distribution
+	// Each item represents a block to process
+	blockCh := make(chan [2]int, totalBlocks)
+
+	// Fill the channel with block coordinates
+	for blockY := 0; blockY < numBlocksY; blockY++ {
+		for blockX := 0; blockX < numBlocksX; blockX++ {
+			blockCh <- [2]int{blockX, blockY}
+		}
+	}
+	close(blockCh)
+
+	// Start worker goroutines
+	var wg sync.WaitGroup
+	for i := 0; i < ncpus; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// Process blocks until the channel is empty
+			for block := range blockCh {
+				blockX, blockY := block[0], block[1]
+
+				// Calculate the pixel range for this block
+				startX := bds.Min.X + blockX*blockSize
+				startY := bds.Min.Y + blockY*blockSize
+				endX := startX + blockSize
+				endY := startY + blockSize
+
+				// Clamp to image boundaries
+				if endX > bds.Max.X {
+					endX = bds.Max.X
+				}
+				if endY > bds.Max.Y {
+					endY = bds.Max.Y
+				}
+
+				// Process all pixels in this block
+				for y := startY; y < endY; y++ {
+					for x := startX; x < endX; x++ {
+						c.fn(p.Image, dst, x, y)
+					}
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+	p.Image = dst
+}
+
+func (c *colorFilter) RenderSequential(p *pxl.Pxl) {
+	bds := p.Image.Bounds()
+	dst := c.dst(bds)
+	for y := bds.Min.Y; y < bds.Max.Y; y++ {
+		for x := bds.Min.X; x < bds.Max.X; x++ {
+			c.fn(p.Image, dst, x, y)
+		}
+	}
+	p.Image = dst
+}
 
 func procPixRow(src image.Image, dst image.Image, f func(image.Image, image.Image, int, int), minX, maxX, y int) {
 	for x := minX; x < maxX; x++ {
