@@ -8,7 +8,7 @@ import (
 )
 
 func TestGray(t *testing.T) {
-	i, err := pxl.Read("../test_images/penguin.png")
+	i, err := pxl.Read("../test_images/elephant.png")
 	if err != nil {
 		t.Error(err)
 		return
@@ -61,7 +61,7 @@ func TestSepia16(t *testing.T) {
 }
 
 func TestDuotone(t *testing.T) {
-	i, err := pxl.Read("../test_images/deer.png")
+	i, err := pxl.Read("../test_images/elephant.png")
 	if err != nil {
 		t.Error(err)
 		return
@@ -71,6 +71,80 @@ func TestDuotone(t *testing.T) {
 	f := Duotone(h, s)
 	f.Render(i)
 	err = i.Write("../test_images/write_tests/DuotoneTest.png", pxl.PNG)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestDuotoneN(t *testing.T) {
+	i, err := pxl.Read("../test_images/elephant.png")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	h := color.RGBA{R: 255, G: 0, B: 40, A: 255}
+	s := color.RGBA{R: 122, G: 0, B: 79, A: 255}
+	f := DuotoneN(h, s)
+	f.Render(i)
+	err = i.Write("../test_images/write_tests/DuotoneTest.png", pxl.PNG)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestBlueTint(t *testing.T) {
+	i, err := pxl.Read("../test_images/elephant.png")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	f := BlueTint(1.0)
+	f.Render(i)
+	err = i.Write("../test_images/write_tests/BlueTint.png", pxl.PNG)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestBlueTintJ(t *testing.T) {
+	i, err := pxl.Read("../test_images/elephant.jpeg")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	f := BlueTint(1.0)
+	f.Render(i)
+	err = i.Write("../test_images/write_tests/elephant.jpeg", pxl.JPG)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestRedTint(t *testing.T) {
+	i, err := pxl.Read("../test_images/elephant.png")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	f := RedTint(1.0)
+	f.Render(i)
+	err = i.Write("../test_images/write_tests/RedTint.png", pxl.PNG)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestDouble(t *testing.T) {
+	i, err := pxl.Read("../test_images/elephant.png")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	s := Sepia(1.0)
+	r := RedTint(1.0)
+	s.Render(i)
+	r.Render(i)
+	err = i.Write("../test_images/write_tests/SepRed.png", pxl.PNG)
 	if err != nil {
 		t.Error(err)
 	}

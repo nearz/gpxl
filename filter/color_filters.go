@@ -3,11 +3,13 @@ package filter
 // Do all the numerical type conversions cause performance issues?
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"math"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/nearz/gpxl/pxl"
 	"github.com/nearz/gpxl/utils"
@@ -48,6 +50,10 @@ type colorFilter struct {
 func (c *colorFilter) Render(p *pxl.Pxl) {
 	// What checks can I make??
 	// How to test or benchmark goroutines
+	start := time.Now()
+	defer func() {
+		fmt.Printf("Render time %s\n", time.Since(start))
+	}()
 
 	bds := p.Image.Bounds()
 	dst := c.dst(bds)
@@ -180,6 +186,25 @@ func Duotone(h, s color.RGBA) Filter {
 	}
 }
 
+func DuotoneN(h, s color.RGBA) Filter {
+	hr, hg, hb, _ := h.RGBA()
+	sr, sg, sb, _ := s.RGBA()
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+			r8 := float64(r >> 8)
+			g8 := float64(g >> 8)
+			b8 := float64(b >> 8)
+			fnlR, fnlG, fnlB := duotoneCalc(r8, g8, b8, clamp8, shft8, hr, hg, hb, sr, sg, sb)
+
+			dst.(*image.NRGBA).Set(x, y, color.RGBA{uint8(fnlR), uint8(fnlG), uint8(fnlB), uint8(a)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewNRGBA(r)
+		},
+	}
+}
+
 func duotoneCalc(r, g, b, c float64, shft int, hr, hg, hb, sr, sg, sb uint32) (rd, gd, bd float64) {
 	l := luminance(r, g, b)
 	t := l / c
@@ -200,4 +225,86 @@ func duotoneCalc(r, g, b, c float64, shft int, hr, hg, hb, sr, sg, sb uint32) (r
 
 func luminance(r, g, b float64) float64 {
 	return rl*r + gl*g + bl*b
+}
+
+// BlueTint enhances the blue channel in an image by the specified amount
+// intensity: 0.0 = no change, 1.0 = maximum blue enhancement
+func BlueTint(intensity float64) Filter {
+	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+			r8 := uint8(r >> 8)
+			g8 := uint8(g >> 8)
+			b8 := uint8(b >> 8)
+
+			// Calculate enhanced blue value
+			enhancedBlue := uint8(math.Min(float64(b8)*(1.0+intensity), 255))
+
+			dst.(*image.RGBA).Set(x, y, color.RGBA{r8, g8, enhancedBlue, uint8(a >> 8)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewRGBA(r)
+		},
+	}
+}
+
+// BlueTint16 enhances the blue channel in an image by the specified amount (16-bit precision)
+// intensity: 0.0 = no change, 1.0 = maximum blue enhancement
+func BlueTint16(intensity float64) Filter {
+	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+
+			// Calculate enhanced blue value
+			enhancedBlue := uint16(math.Min(float64(b)*(1.0+intensity), 65535))
+
+			dst.(*image.RGBA64).Set(x, y, color.RGBA64{uint16(r), uint16(g), enhancedBlue, uint16(a)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewRGBA64(r)
+		},
+	}
+}
+
+// RedTint enhances the red channel in an image by the specified amount
+// intensity: 0.0 = no change, 1.0 = maximum red enhancement
+func RedTint(intensity float64) Filter {
+	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+			r8 := uint8(r >> 8)
+			g8 := uint8(g >> 8)
+			b8 := uint8(b >> 8)
+
+			// Calculate enhanced red value
+			enhancedRed := uint8(math.Min(float64(r8)*(1.0+intensity), 255))
+
+			dst.(*image.RGBA).Set(x, y, color.RGBA{enhancedRed, g8, b8, uint8(a >> 8)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewRGBA(r)
+		},
+	}
+}
+
+// RedTint16 enhances the red channel in an image by the specified amount (16-bit precision)
+// intensity: 0.0 = no change, 1.0 = maximum red enhancement
+func RedTint16(intensity float64) Filter {
+	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+
+			// Calculate enhanced red value
+			enhancedRed := uint16(math.Min(float64(r)*(1.0+intensity), 65535))
+
+			dst.(*image.RGBA64).Set(x, y, color.RGBA64{enhancedRed, uint16(g), uint16(b), uint16(a)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewRGBA64(r)
+		},
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"os"
+	"time"
 )
 
 type ImageFormat string
@@ -21,6 +22,11 @@ type Pxl struct {
 }
 
 func Read(path string) (*Pxl, error) {
+	start := time.Now()
+	defer func() {
+		fmt.Printf("Decode time %s\n", time.Since(start))
+	}()
+
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -40,6 +46,11 @@ func Read(path string) (*Pxl, error) {
 }
 
 func (p *Pxl) Write(path string, format ImageFormat) error {
+	start := time.Now()
+	defer func() {
+		fmt.Printf("Encode time %s\n", time.Since(start))
+	}()
+
 	f, err := os.Create(path)
 	if err != nil {
 		return err
