@@ -14,28 +14,8 @@ import (
 )
 
 const (
-	shft8  = 8
-	shft16 = 16
-)
-
-// For luminance calculations
-const (
-	rl = 0.299
-	gl = 0.587
-	bl = 0.114
-)
-
-// For sepia calculations
-const (
-	s1      = 0.393
-	s2      = 0.769
-	s3      = 0.189
-	s4      = 0.349
-	s5      = 0.686
-	s6      = 0.168
-	s7      = 0.272
-	s8      = 0.534
-	s9      = 0.131
+	shft8   = 8
+	shft16  = 0
 	clamp8  = 255
 	clamp16 = 65535
 )
@@ -308,6 +288,12 @@ func GreenTint16(intensity float64) Filter {
 	}
 }
 
+const (
+	rl = 0.299
+	gl = 0.587
+	bl = 0.114
+)
+
 func luminance(r, g, b float64) float64 {
 	return rl*r + gl*g + bl*b
 }
@@ -315,20 +301,32 @@ func luminance(r, g, b float64) float64 {
 func duotoneCalc(r, g, b, c float64, shft int, hr, hg, hb, sr, sg, sb uint32) (rd, gd, bd float64) {
 	l := luminance(r, g, b)
 	t := l / c
+	// Ensure t is between 0 and 1
+	t = math.Max(0, math.Min(1, t))
+
 	rd = utils.Lerp(float64(sr>>shft), float64(hr>>shft), t)
 	gd = utils.Lerp(float64(sg>>shft), float64(hg>>shft), t)
 	bd = utils.Lerp(float64(sb>>shft), float64(hb>>shft), t)
-	if rd > c {
-		rd = c
-	}
-	if gd > c {
-		gd = c
-	}
-	if bd > c {
-		bd = c
-	}
+
+	// Clamp to valid range [0, c]
+	rd = math.Max(0, math.Min(c, rd))
+	gd = math.Max(0, math.Min(c, gd))
+	bd = math.Max(0, math.Min(c, bd))
+
 	return
 }
+
+const (
+	s1 = 0.393
+	s2 = 0.769
+	s3 = 0.189
+	s4 = 0.349
+	s5 = 0.686
+	s6 = 0.168
+	s7 = 0.272
+	s8 = 0.534
+	s9 = 0.131
+)
 
 func sepiaClac(r, g, b, i, c float64) (fr, fg, fb float64) {
 	sr := s1*r + s2*g + s3*b
