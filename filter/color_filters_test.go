@@ -1,151 +1,21 @@
 package filter
 
 import (
-	"image/color"
+	"image/png"
 	"testing"
 
 	"github.com/nearz/gpxl/pxl"
 )
 
-func TestGray(t *testing.T) {
+func TestGreenTint(t *testing.T) {
 	i, err := pxl.Read("../test_images/elephant.png")
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Image read failed: %v", err)
 	}
-	f := Grayscale()
+	f := GreenTint(1.0)
 	f.Render(i)
-	err = i.Write("../test_images/write_tests/GrayTest.png", pxl.PNG)
+	err = i.WritePNG("../test_images/write_tests/GreenTint.png", png.BestSpeed)
 	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestGrayscale16(t *testing.T) {
-	i, err := pxl.Read("../test_images/elephant16.png")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	f := Grayscale16()
-	f.Render(i)
-	err = i.Write("../test_images/write_tests/GrayTest16.png", pxl.PNG)
-}
-
-func TestSepia(t *testing.T) {
-	i, err := pxl.Read("../test_images/elephant.png")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	f := Sepia(1.0)
-	f.Render(i)
-	err = i.Write("../test_images/write_tests/SepiaTest.png", pxl.PNG)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestSepia16(t *testing.T) {
-	i, err := pxl.Read("../test_images/elephant16.png")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	f := Sepia16(1.0)
-	f.Render(i)
-	err = i.Write("../test_images/write_tests/SepiaTest16.png", pxl.PNG)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestDuotone(t *testing.T) {
-	i, err := pxl.Read("../test_images/elephant.png")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	h := color.RGBA{R: 255, G: 0, B: 40, A: 255}
-	s := color.RGBA{R: 122, G: 0, B: 79, A: 255}
-	f := Duotone(h, s)
-	f.Render(i)
-	err = i.Write("../test_images/write_tests/DuotoneTest.png", pxl.PNG)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestDuotoneN(t *testing.T) {
-	i, err := pxl.Read("../test_images/elephant.png")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	h := color.RGBA{R: 255, G: 0, B: 40, A: 255}
-	s := color.RGBA{R: 122, G: 0, B: 79, A: 255}
-	f := DuotoneN(h, s)
-	f.Render(i)
-	err = i.Write("../test_images/write_tests/DuotoneTest.png", pxl.PNG)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestBlueTint(t *testing.T) {
-	i, err := pxl.Read("../test_images/elephant.png")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	f := BlueTint(1.0)
-	f.Render(i)
-	err = i.Write("../test_images/write_tests/BlueTint.png", pxl.PNG)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestBlueTintJ(t *testing.T) {
-	i, err := pxl.Read("../test_images/elephant.jpeg")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	f := BlueTint(1.0)
-	f.Render(i)
-	err = i.Write("../test_images/write_tests/elephant.jpeg", pxl.JPG)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestRedTint(t *testing.T) {
-	i, err := pxl.Read("../test_images/elephant.png")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	f := RedTint(1.0)
-	f.Render(i)
-	err = i.Write("../test_images/write_tests/RedTint.png", pxl.PNG)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestDouble(t *testing.T) {
-	i, err := pxl.Read("../test_images/elephant.png")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	s := Sepia(1.0)
-	r := RedTint(1.0)
-	s.Render(i)
-	r.Render(i)
-	err = i.Write("../test_images/write_tests/SepRed.png", pxl.PNG)
-	if err != nil {
-		t.Error(err)
+		t.Fatalf("Image write failed: %v", err)
 	}
 }

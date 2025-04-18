@@ -5,12 +5,13 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"math"
 	"os"
-	"time"
 )
 
 type ImageFormat string
 
+// Will there be a use for these?
 const (
 	JPG ImageFormat = "jpeg"
 	PNG ImageFormat = "png"
@@ -22,11 +23,6 @@ type Pxl struct {
 }
 
 func Read(path string) (*Pxl, error) {
-	start := time.Now()
-	defer func() {
-		fmt.Printf("Decode time %s\n", time.Since(start))
-	}()
-
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -45,26 +41,28 @@ func Read(path string) (*Pxl, error) {
 	return pxl, nil
 }
 
-func (p *Pxl) Write(path string, format ImageFormat) error {
-	start := time.Now()
-	defer func() {
-		fmt.Printf("Encode time %s\n", time.Since(start))
-	}()
-
+func (p *Pxl) WritePNG(path string, cl png.CompressionLevel) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	switch format {
-	case JPG:
-		return jpeg.Encode(f, p.Image, &jpeg.Options{Quality: 95})
-	case PNG:
-		return png.Encode(f, p.Image)
-	default:
-		return fmt.Errorf("unsupported format: %s", format)
+	enc := png.Encoder{
+		CompressionLevel: cl,
 	}
+	return enc.Encode(f, p.Image)
+}
+
+func (p *Pxl) WriteJPEG(path string, quality int) error {
+	fq := math.Min(math.Max(float64(quality), 0.0), 100.0)
+	quality = int(fq)
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return jpeg.Encode(f, p.Image, &jpeg.Options{Quality: quality})
 }
 
 func (p *Pxl) PrintType() {

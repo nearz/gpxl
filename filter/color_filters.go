@@ -1,7 +1,5 @@
 package filter
 
-// Do all the numerical type conversions cause performance issues?
-
 import (
 	"fmt"
 	"image"
@@ -20,7 +18,7 @@ const (
 	shft16 = 16
 )
 
-// For grayscale calculations
+// For luminance calculations
 const (
 	rl = 0.299
 	gl = 0.587
@@ -122,10 +120,10 @@ func Sepia(intensity float64) Filter {
 			b8 := float64(b >> 8)
 			fnlR, fnlG, fnlB := sepiaClac(r8, g8, b8, intensity, clamp8)
 
-			dst.(*image.RGBA).Set(x, y, color.RGBA{uint8(fnlR), uint8(fnlG), uint8(fnlB), uint8(a)})
+			dst.(*image.NRGBA).Set(x, y, color.NRGBA{uint8(fnlR), uint8(fnlG), uint8(fnlB), uint8(a)})
 		},
 		dst: func(r image.Rectangle) image.Image {
-			return image.NewRGBA(r)
+			return image.NewNRGBA(r)
 		},
 	}
 }
@@ -140,31 +138,12 @@ func Sepia16(intensity float64) Filter {
 			b16 := float64(b)
 			fnlR, fnlG, fnlB := sepiaClac(r16, g16, b16, intensity, clamp16)
 
-			dst.(*image.RGBA64).Set(x, y, color.RGBA64{uint16(fnlR), uint16(fnlG), uint16(fnlB), uint16(a)})
+			dst.(*image.NRGBA64).Set(x, y, color.RGBA64{uint16(fnlR), uint16(fnlG), uint16(fnlB), uint16(a)})
 		},
 		dst: func(r image.Rectangle) image.Image {
-			return image.NewRGBA64(r)
+			return image.NewNRGBA64(r)
 		},
 	}
-}
-
-func sepiaClac(r, g, b, i, c float64) (fr, fg, fb float64) {
-	sr := s1*r + s2*g + s3*b
-	sg := s4*r + s5*g + s6*b
-	sb := s7*r + s8*g + s9*b
-	fr = utils.Lerp(r, sr, i)
-	fg = utils.Lerp(g, sg, i)
-	fb = utils.Lerp(b, sb, i)
-	if fr > c {
-		fr = c
-	}
-	if fg > c {
-		fg = c
-	}
-	if fb > c {
-		fb = c
-	}
-	return
 }
 
 func Duotone(h, s color.RGBA) Filter {
@@ -178,31 +157,159 @@ func Duotone(h, s color.RGBA) Filter {
 			b8 := float64(b >> 8)
 			fnlR, fnlG, fnlB := duotoneCalc(r8, g8, b8, clamp8, shft8, hr, hg, hb, sr, sg, sb)
 
-			dst.(*image.RGBA).Set(x, y, color.RGBA{uint8(fnlR), uint8(fnlG), uint8(fnlB), uint8(a)})
-		},
-		dst: func(r image.Rectangle) image.Image {
-			return image.NewRGBA(r)
-		},
-	}
-}
-
-func DuotoneN(h, s color.RGBA) Filter {
-	hr, hg, hb, _ := h.RGBA()
-	sr, sg, sb, _ := s.RGBA()
-	return &colorFilter{
-		fn: func(src, dst image.Image, x, y int) {
-			r, g, b, a := src.At(x, y).RGBA()
-			r8 := float64(r >> 8)
-			g8 := float64(g >> 8)
-			b8 := float64(b >> 8)
-			fnlR, fnlG, fnlB := duotoneCalc(r8, g8, b8, clamp8, shft8, hr, hg, hb, sr, sg, sb)
-
-			dst.(*image.NRGBA).Set(x, y, color.RGBA{uint8(fnlR), uint8(fnlG), uint8(fnlB), uint8(a)})
+			dst.(*image.NRGBA).Set(x, y, color.NRGBA{uint8(fnlR), uint8(fnlG), uint8(fnlB), uint8(a)})
 		},
 		dst: func(r image.Rectangle) image.Image {
 			return image.NewNRGBA(r)
 		},
 	}
+}
+
+// Need Duotone16
+func Duotone16(h, s color.RGBA) Filter {
+	hr, hg, hb, _ := h.RGBA()
+	sr, sg, sb, _ := s.RGBA()
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+			r16 := float64(r)
+			g16 := float64(g)
+			b16 := float64(b)
+			fnlR, fnlG, fnlB := duotoneCalc(r16, g16, b16, clamp16, shft16, hr, hg, hb, sr, sg, sb)
+
+			dst.(*image.NRGBA64).Set(x, y, color.NRGBA64{uint16(fnlR), uint16(fnlG), uint16(fnlB), uint16(a)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewNRGBA64(r)
+		},
+	}
+}
+
+// BlueTint enhances the blue channel in an image by the specified amount
+// intensity: 0.0 = no change, 1.0 = maximum blue enhancement
+func BlueTint(intensity float64) Filter {
+	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+			r8 := uint8(r >> 8)
+			g8 := uint8(g >> 8)
+			b8 := uint8(b >> 8)
+
+			// Calculate enhanced blue value
+			enhancedBlue := uint8(math.Min(float64(b8)*(1.0+intensity), 255))
+
+			dst.(*image.NRGBA).Set(x, y, color.NRGBA{r8, g8, enhancedBlue, uint8(a >> 8)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewNRGBA(r)
+		},
+	}
+}
+
+// BlueTint16 enhances the blue channel in an image by the specified amount (16-bit precision)
+// intensity: 0.0 = no change, 1.0 = maximum blue enhancement
+func BlueTint16(intensity float64) Filter {
+	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+
+			// Calculate enhanced blue value
+			enhancedBlue := uint16(math.Min(float64(b)*(1.0+intensity), 65535))
+
+			dst.(*image.NRGBA64).Set(x, y, color.RGBA64{uint16(r), uint16(g), enhancedBlue, uint16(a)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewNRGBA64(r)
+		},
+	}
+}
+
+// RedTint enhances the red channel in an image by the specified amount
+// intensity: 0.0 = no change, 1.0 = maximum red enhancement
+func RedTint(intensity float64) Filter {
+	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+			r8 := uint8(r >> 8)
+			g8 := uint8(g >> 8)
+			b8 := uint8(b >> 8)
+
+			// Calculate enhanced red value
+			enhancedRed := uint8(math.Min(float64(r8)*(1.0+intensity), 255))
+
+			dst.(*image.NRGBA).Set(x, y, color.NRGBA{enhancedRed, g8, b8, uint8(a >> 8)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewNRGBA(r)
+		},
+	}
+}
+
+// RedTint16 enhances the red channel in an image by the specified amount (16-bit precision)
+// intensity: 0.0 = no change, 1.0 = maximum red enhancement
+func RedTint16(intensity float64) Filter {
+	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+
+			// Calculate enhanced red value
+			enhancedRed := uint16(math.Min(float64(r)*(1.0+intensity), 65535))
+
+			dst.(*image.NRGBA64).Set(x, y, color.RGBA64{enhancedRed, uint16(g), uint16(b), uint16(a)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewNRGBA64(r)
+		},
+	}
+}
+
+// GreenTint enhances the green channel in an image by the specified amount
+// intensity: 0.0 = no change, 1.0 = maximum green enhancement
+func GreenTint(intensity float64) Filter {
+	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+			r8 := uint8(r >> 8)
+			g8 := uint8(g >> 8)
+			b8 := uint8(b >> 8)
+
+			// Calculate enhanced green value
+			enhancedGreen := uint8(math.Min(float64(g8)*(1.0+intensity), 255))
+
+			dst.(*image.NRGBA).Set(x, y, color.NRGBA{r8, enhancedGreen, b8, uint8(a >> 8)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewNRGBA(r)
+		},
+	}
+}
+
+// GreenTint16 enhances the green channel in an image by the specified amount (16-bit precision)
+// intensity: 0.0 = no change, 1.0 = maximum green enhancement
+func GreenTint16(intensity float64) Filter {
+	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
+	return &colorFilter{
+		fn: func(src, dst image.Image, x, y int) {
+			r, g, b, a := src.At(x, y).RGBA()
+
+			// Calculate enhanced green value
+			enhancedGreen := uint16(math.Min(float64(g)*(1.0+intensity), 65535))
+
+			dst.(*image.NRGBA64).Set(x, y, color.RGBA64{uint16(r), enhancedGreen, uint16(b), uint16(a)})
+		},
+		dst: func(r image.Rectangle) image.Image {
+			return image.NewNRGBA64(r)
+		},
+	}
+}
+
+func luminance(r, g, b float64) float64 {
+	return rl*r + gl*g + bl*b
 }
 
 func duotoneCalc(r, g, b, c float64, shft int, hr, hg, hb, sr, sg, sb uint32) (rd, gd, bd float64) {
@@ -223,88 +330,21 @@ func duotoneCalc(r, g, b, c float64, shft int, hr, hg, hb, sr, sg, sb uint32) (r
 	return
 }
 
-func luminance(r, g, b float64) float64 {
-	return rl*r + gl*g + bl*b
-}
-
-// BlueTint enhances the blue channel in an image by the specified amount
-// intensity: 0.0 = no change, 1.0 = maximum blue enhancement
-func BlueTint(intensity float64) Filter {
-	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
-	return &colorFilter{
-		fn: func(src, dst image.Image, x, y int) {
-			r, g, b, a := src.At(x, y).RGBA()
-			r8 := uint8(r >> 8)
-			g8 := uint8(g >> 8)
-			b8 := uint8(b >> 8)
-
-			// Calculate enhanced blue value
-			enhancedBlue := uint8(math.Min(float64(b8)*(1.0+intensity), 255))
-
-			dst.(*image.RGBA).Set(x, y, color.RGBA{r8, g8, enhancedBlue, uint8(a >> 8)})
-		},
-		dst: func(r image.Rectangle) image.Image {
-			return image.NewRGBA(r)
-		},
+func sepiaClac(r, g, b, i, c float64) (fr, fg, fb float64) {
+	sr := s1*r + s2*g + s3*b
+	sg := s4*r + s5*g + s6*b
+	sb := s7*r + s8*g + s9*b
+	fr = utils.Lerp(r, sr, i)
+	fg = utils.Lerp(g, sg, i)
+	fb = utils.Lerp(b, sb, i)
+	if fr > c {
+		fr = c
 	}
-}
-
-// BlueTint16 enhances the blue channel in an image by the specified amount (16-bit precision)
-// intensity: 0.0 = no change, 1.0 = maximum blue enhancement
-func BlueTint16(intensity float64) Filter {
-	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
-	return &colorFilter{
-		fn: func(src, dst image.Image, x, y int) {
-			r, g, b, a := src.At(x, y).RGBA()
-
-			// Calculate enhanced blue value
-			enhancedBlue := uint16(math.Min(float64(b)*(1.0+intensity), 65535))
-
-			dst.(*image.RGBA64).Set(x, y, color.RGBA64{uint16(r), uint16(g), enhancedBlue, uint16(a)})
-		},
-		dst: func(r image.Rectangle) image.Image {
-			return image.NewRGBA64(r)
-		},
+	if fg > c {
+		fg = c
 	}
-}
-
-// RedTint enhances the red channel in an image by the specified amount
-// intensity: 0.0 = no change, 1.0 = maximum red enhancement
-func RedTint(intensity float64) Filter {
-	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
-	return &colorFilter{
-		fn: func(src, dst image.Image, x, y int) {
-			r, g, b, a := src.At(x, y).RGBA()
-			r8 := uint8(r >> 8)
-			g8 := uint8(g >> 8)
-			b8 := uint8(b >> 8)
-
-			// Calculate enhanced red value
-			enhancedRed := uint8(math.Min(float64(r8)*(1.0+intensity), 255))
-
-			dst.(*image.RGBA).Set(x, y, color.RGBA{enhancedRed, g8, b8, uint8(a >> 8)})
-		},
-		dst: func(r image.Rectangle) image.Image {
-			return image.NewRGBA(r)
-		},
+	if fb > c {
+		fb = c
 	}
-}
-
-// RedTint16 enhances the red channel in an image by the specified amount (16-bit precision)
-// intensity: 0.0 = no change, 1.0 = maximum red enhancement
-func RedTint16(intensity float64) Filter {
-	intensity = math.Min(math.Max(intensity, 0.0), 1.0)
-	return &colorFilter{
-		fn: func(src, dst image.Image, x, y int) {
-			r, g, b, a := src.At(x, y).RGBA()
-
-			// Calculate enhanced red value
-			enhancedRed := uint16(math.Min(float64(r)*(1.0+intensity), 65535))
-
-			dst.(*image.RGBA64).Set(x, y, color.RGBA64{enhancedRed, uint16(g), uint16(b), uint16(a)})
-		},
-		dst: func(r image.Rectangle) image.Image {
-			return image.NewRGBA64(r)
-		},
-	}
+	return
 }

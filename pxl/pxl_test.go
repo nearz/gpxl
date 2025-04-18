@@ -1,6 +1,7 @@
 package pxl
 
 import (
+	"image/png"
 	"os"
 	"testing"
 )
@@ -30,7 +31,7 @@ func TestRead(t *testing.T) {
 	}
 }
 
-func TestWrite(t *testing.T) {
+func TestWritePNG(t *testing.T) {
 	pxl, err := Read("../test_images/small.png")
 	if err != nil {
 		t.Fatalf("Failed to read test image: %v", err)
@@ -39,20 +40,54 @@ func TestWrite(t *testing.T) {
 	tests := []struct {
 		name    string
 		path    string
-		format  ImageFormat
+		level   png.CompressionLevel
 		wantErr bool
 	}{
-		{"Write PNG", "../test_images/write_tests/write_test.png", PNG, false},
-		{"Write JPEG", "../test_images/write_tests/write_test.jpg", JPG, false},
-		{"Write JPG", "../test_images/write_tests/write_test.jpg", JPG, false},
-		{"Invalid format", "../test_images/write_tests/write_test.tiff", "tiff", true},
+		{"Write PNG Default", "../test_images/write_tests/write_test.png", png.DefaultCompression, false},
+		{"Write PNG NoCompression", "../test_images/write_tests/write_test.png", png.NoCompression, false},
+		{"Write PNG BestSpeed", "../test_images/write_tests/write_test.png", png.BestSpeed, false},
+		{"Write PNG BestCompression", "../test_images/write_tests/write_test.png", png.BestCompression, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := pxl.Write(tt.path, tt.format)
+			err := pxl.WritePNG(tt.path, tt.level)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Write() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("WritePNG() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if !tt.wantErr {
+				os.Remove(tt.path)
+			}
+		})
+	}
+}
+
+func TestWriteJPEG(t *testing.T) {
+	pxl, err := Read("../test_images/small.png")
+	if err != nil {
+		t.Fatalf("Failed to read test image: %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		path    string
+		quality int
+		wantErr bool
+	}{
+		{"Write JPEG Quality 100", "../test_images/write_tests/write_test.jpg", 100, false},
+		{"Write JPEG Quality 75", "../test_images/write_tests/write_test.jpg", 75, false},
+		{"Write JPEG Quality 50", "../test_images/write_tests/write_test.jpg", 50, false},
+		{"Write JPEG Quality 0", "../test_images/write_tests/write_test.jpg", 0, false},
+		{"Write JPEG Quality -1", "../test_images/write_tests/write_test.jpg", -1, false},
+		{"Write JPEG Quality 101", "../test_images/write_tests/write_test.jpg", 101, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := pxl.WriteJPEG(tt.path, tt.quality)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("WriteJPEG() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if !tt.wantErr {
@@ -75,7 +110,7 @@ func TestSandbox(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read image: %v\n", err)
 	}
-	err = pxl.Write("../test_images/write_tests/ElWriteTest.png", PNG)
+	err = pxl.WritePNG("../test_images/write_tests/ElWriteTest.png", png.DefaultCompression)
 	if err != nil {
 		t.Errorf("Failed to write image: %v\n", err)
 	}
