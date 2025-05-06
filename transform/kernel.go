@@ -2,6 +2,8 @@ package transform
 
 import "math"
 
+// Is this a kernel? I have seen this called filter too??
+// Look up an rename maybe?
 type Kernel struct {
 	Radius int
 	Fn     func(t float64) float64
@@ -39,6 +41,7 @@ func init() {
 			return 0
 		},
 	}
+	// Bug - Color artifacts that need fix. e.g. pixel full Red.
 	CatmullRom = Kernel{
 		Radius: 2,
 		Fn: func(t float64) float64 {

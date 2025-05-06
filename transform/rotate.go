@@ -23,6 +23,9 @@ Todo:
 - Is it more effiecient to resize larger since operation is seperable for rows and columns?
 */
 
+// Rename to make more sense.
+// I dont think there will be a general transformer struct
+// for all transformation funcs.
 type transformer struct {
 	fn func(float64, float64, image.Image) color.Color
 }
@@ -63,6 +66,7 @@ func (t *transformer) Rotate(p *pxl.Pxl, angle float64) error {
 	return nil
 }
 
+// Rotater?
 func Rotater(k Kernel) *transformer {
 	if k.Radius <= 0 {
 		return &transformer{
@@ -79,6 +83,7 @@ func Rotater(k Kernel) *transformer {
 			},
 		}
 	} else {
+		// Bounds check for after calmpEdge?
 		return &transformer{
 			fn: func(x, y float64, src image.Image) color.Color {
 				x0 := int(math.Floor(x)) - (k.Radius - 1)
@@ -108,56 +113,7 @@ func Rotater(k Kernel) *transformer {
 	}
 }
 
-func NearestNeighbor() *transformer {
-	return &transformer{
-		fn: func(x, y float64, src image.Image) color.Color {
-			xi := int(x + 0.5)
-			yi := int(y + 0.5)
-			xi = clampEdge(xi, src.Bounds().Min.X, src.Bounds().Max.X)
-			yi = clampEdge(yi, src.Bounds().Min.Y, src.Bounds().Max.Y)
-			if !inBounds(xi, yi, src.Bounds()) {
-				return color.RGBA{0, 0, 0, 0}
-			}
-			c := src.At(xi, yi)
-			return c
-		},
-	}
-}
-
-func Bilinear() *transformer {
-	return &transformer{
-		fn: func(x, y float64, src image.Image) color.Color {
-			fx := x - math.Floor(x)
-			fy := y - math.Floor(y)
-			x0, y0 := int(math.Floor(x)), int(math.Floor(y))
-			x0 = clampEdge(x0, src.Bounds().Min.X, src.Bounds().Max.X)
-			y0 = clampEdge(y0, src.Bounds().Min.Y, src.Bounds().Max.Y)
-			if !inBounds(x0, y0, src.Bounds()) {
-				return color.RGBA{0, 0, 0, 0}
-			}
-			x1, y1 := x0+1, y0+1
-			x1 = clampEdge(x1, src.Bounds().Min.X, src.Bounds().Max.X)
-			y1 = clampEdge(y1, src.Bounds().Min.Y, src.Bounds().Max.Y)
-			c00 := src.At(x0, y0).(color.RGBA)
-			c01 := src.At(x0, y1).(color.RGBA)
-			c10 := src.At(x1, y0).(color.RGBA)
-			c11 := src.At(x1, y1).(color.RGBA)
-			r := filterLerp(filterLerp(c00.R, c10.R, fx), filterLerp(c01.R, c11.R, fx), fy)
-			g := filterLerp(filterLerp(c00.G, c10.G, fx), filterLerp(c01.G, c11.G, fx), fy)
-			b := filterLerp(filterLerp(c00.B, c10.B, fx), filterLerp(c01.B, c11.B, fx), fy)
-			a := filterLerp(filterLerp(c00.A, c10.A, fx), filterLerp(c01.A, c11.A, fx), fy)
-			c := color.RGBA{r, g, b, a}
-			return c
-		},
-	}
-}
-
-func filterLerp(a, b uint8, t float64) uint8 {
-	af := float64(a)
-	bf := float64(b)
-	return uint8(math.Round(af + t*(bf-af)))
-}
-
+// Maybe have an out of range flag? So that I can return a blank pizel if so? For angle not of 90 degree increments.
 func clampEdge(a, min, max int) int {
 	if a == min-1 {
 		return min

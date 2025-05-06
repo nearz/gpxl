@@ -45,6 +45,9 @@ A go image processing package just for fun and to learn. Currently a work in pro
 * [ ] Threshold
 * [ ] More...
 
+### Concurrency:
+* [X] Row Chunk
+* [ ] Better ways?
 
 ## TODOs & Maybes
 
@@ -53,6 +56,7 @@ A go image processing package just for fun and to learn. Currently a work in pro
 * [ ] Generalize Features for all golang Color Models
 * [ ] Add examples
 * [ ] Add examples/tutorial in README
+* [ ] Clean Up
 
 ### Maybes:
 
