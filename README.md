@@ -1,4 +1,4 @@
-![Pxl Gopher.](./assets/gpxl_logo.png)
+<img src="./assets/gpxl_logo.png" alt="Alt text" width="300" />
 
 # GPxl - Work In Progress
 
@@ -52,13 +52,15 @@ A go image processing package just for fun and to learn. Currently a work in pro
 ## TODOs & Maybes
 
 ### Todo:
-* [ ] Find/Implement more typical image processing features
-* [ ] Generalize Features for all golang Color Models
-* [ ] Add examples
-* [ ] Add examples/tutorial in README
-* [ ] Clean Up
+* Find/Implement more typical image processing features
+* Generalize Features for all golang Color Models
+* Add examples
+* Add examples/tutorial in README
+* Clean Up
+* Better Test
+* Directoy that test write temp images too?
 
 ### Maybes:
 
-* [ ] TIFF Encode & Decode (Not in Golang Std Library)
-* [ ] CLI
+* TIFF Encode & Decode (Not in Golang Std Library)
+* CLI
