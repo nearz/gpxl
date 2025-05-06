@@ -1,5 +1,10 @@
 package pxl
 
+/*
+TODO:
+- Should I convert everything to RGBA or RGBA64?
+*/
+
 import (
 	"fmt"
 	"image"

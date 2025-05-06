@@ -1,14 +1,17 @@
 package filter
 
+/*
+NOTES:
+update math.Max and math.Min to built in max and min
+Can I update utils.Clamp for int?
+*/
+
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"math"
-	"runtime"
-	"sync"
-	"time"
 
+	"github.com/nearz/gpxl/concurrent"
 	"github.com/nearz/gpxl/pxl"
 	"github.com/nearz/gpxl/utils"
 )
@@ -27,41 +30,17 @@ type colorFilter struct {
 
 func (c *colorFilter) Render(p *pxl.Pxl) {
 	// What checks can I make??
-	// How to test or benchmark goroutines
-	start := time.Now()
-	defer func() {
-		fmt.Printf("Render time %s\n", time.Since(start))
-	}()
-
 	bds := p.Image.Bounds()
 	dst := c.dst(bds)
-
-	ncpus := runtime.NumCPU()
-	trows := bds.Max.Y - bds.Min.Y
-	chunkSize := (trows + ncpus - 1) / ncpus
-	var wg sync.WaitGroup
-	for sy := bds.Min.Y; sy < bds.Max.Y; sy += chunkSize {
-		wg.Add(1)
-		ey := sy + chunkSize
-		if ey > bds.Max.Y {
-			ey = bds.Max.Y
-		}
-		go func(start, end int) {
-			defer wg.Done()
-			for y := start; y < end; y++ {
-				procPixRow(p.Image, dst, c.fn, bds.Min.X, bds.Max.X, y)
+	rows := bds.Max.Y - bds.Min.Y
+	concurrent.Rows(rows, bds.Min.Y, func(start, end int) {
+		for y := start; y < end; y++ {
+			for x := bds.Min.X; x < bds.Max.X; x++ {
+				c.fn(p.Image, dst, x, y)
 			}
-		}(sy, ey)
-
-	}
-	wg.Wait()
+		}
+	})
 	p.Image = dst
-}
-
-func procPixRow(src image.Image, dst image.Image, f func(image.Image, image.Image, int, int), minX, maxX, y int) {
-	for x := minX; x < maxX; x++ {
-		f(src, dst, x, y)
-	}
 }
 
 func Grayscale() Filter {
