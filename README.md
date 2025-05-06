@@ -1,4 +1,4 @@
-<img src="./assets/gpxl_logo.png" alt="Alt text" width="300" />
+<img src="./assets/gpxl_logo.png" alt="Alt text" width="300" style="display: block; margin: auto;" />
 
 # GPxl - Work In Progress
 
