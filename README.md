@@ -70,14 +70,21 @@ Key areas of exploration include:
 
 ---
 
-## Concurrency
+## Concurrency (Learning Focus)
 
-- [x] Row-based chunk processing
+GPxl explores Go concurrency by parallelizing per-pixel operations.
 
-Concurrency experiments focus on understanding:
-- Work partitioning strategies
-- CPU-bound parallelism limits
-- Tradeoffs between simplicity and throughput
+Approach:
+- Compute `n = runtime.NumCPU()`
+- Split the image into `n` row chunks
+- Process each chunk in a goroutine
+- Wait for completion via `sync.WaitGroup`
+- Each goroutine writes to a distinct row range in the destination image to avoid overlapping writes.
+
+This was built to learn:
+- goroutines + WaitGroups
+- safe work partitioning (no shared writes across chunks)
+- practical limits of parallelism on CPU-bound loops
 
 ---
 
