@@ -47,20 +47,3 @@ A go image processing package just for fun and to learn. Currently a work in pro
 
 ### Concurrency:
 * [X] Row Chunk
-* [ ] Better ways?
-
-## TODOs & Maybes
-
-### Todo:
-* Find/Implement more typical image processing features
-* Generalize Features for all golang Color Models
-* Add examples
-* Add examples/tutorial in README
-* Clean Up
-* Better Test
-* Directoy that test write temp images too?
-
-### Maybes:
-
-* TIFF Encode & Decode (Not in Golang Std Library)
-* CLI
