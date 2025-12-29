@@ -2,7 +2,7 @@
 
 # GPxl
 
-GPxl is a Go-based image processing package built to explore **pixel-level transformations**, **image algorithms**, and **Go’s standard image APIs** through first-principles implementations.
+GPxl is a Go-based image processing package built to explore **pixel-level transformations**, **image algorithms**, and **Go’s standard image APIs** through first-principles implementations, while also serving as a vehicle for continued practice with Go more broadly.
 
 Rather than wrapping existing image-processing libraries, GPxl focuses on implementing filters and geometric transformations directly to better understand how image pipelines work under the hood.
 
@@ -16,7 +16,7 @@ The project prioritizes **clarity, correctness, and understanding** over product
 Key areas of exploration include:
 - Pixel-wise image manipulation
 - Image representations in Go (`image.Image`, `RGBA`, etc.)
-- Algorithmic tradeoffs in CPU-bound workloads
+- Go concurrency fundamentals using goroutines and WaitGroups 
 - API and package design in Go
 
 ---
@@ -91,7 +91,6 @@ This was built to learn:
 ## Tradeoffs & Non-Goals
 
 - GPxl does not aim to compete with optimized native image libraries
-- SIMD, GPU acceleration, and CGO are intentionally avoided
 - Performance optimizations are secondary to readability and correctness
 - The project focuses on single-image transformations rather than batch pipelines
 
@@ -106,13 +105,3 @@ Planned areas of exploration:
 - Improved transformation composition
 - Benchmarking and profiling
 - Further concurrency experimentation
-
----
-
-## What I’ve Learned So Far
-
-- How Go represents images and pixel buffers internally
-- The cost of per-pixel operations in CPU-bound code
-- How design decisions affect composability and testability
-- Where concurrency helps — and where it doesn’t
-
